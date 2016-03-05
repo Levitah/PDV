@@ -2,7 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="br.com.trainning.pdv">
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <application
+        android:name=".PDVApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -21,6 +25,10 @@
         <activity
             android:name=".ui.CadastroNovoActivity"
             android:label="@string/title_activity_cadastro_novo"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".ui.EditarProdutoActivity"
+            android:label="@string/title_activity_editar_produto"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 

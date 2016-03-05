@@ -1,5 +1,6 @@
 package br.com.trainning.pdv.ui;
 
+import android.app.DownloadManager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -11,9 +12,13 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import br.com.trainning.pdv.R;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+import br.com.trainning.pdv.R;
+import br.com.trainning.pdv.domain.model.Produto;
+import se.emilsjolander.sprinkles.Query;
+
+public class MainActivity extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,10 +63,32 @@ public class MainActivity extends AppCompatActivity {
 
         //Ação de editar produto
         else if (id == R.id.action_edit) {
+
+            Intent intent = new Intent(MainActivity.this, EditarProdutoActivity.class);
+            startActivity(intent);
+
             Log.d("Main Activity", "Selecionou Editar Produto");
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        List<Produto> produtos = Query.all(Produto.class).get().asList();
+        if (produtos != null) {
+            for (Produto p: produtos) {
+                Log.d("Produto:", "=================================");
+                Log.d("Produto:", "id~~>" + p.getId());
+                Log.d("Produto:", "descricao~~>" + p.getDescricao());
+                Log.d("Produto:", "unidade~~>" + p.getUnidade());
+                Log.d("Produto:", "codigo_barra~~>" + p.getCodigoBarras());
+                Log.d("Produto:", "preço~~>" + p.getPreco());
+                Log.d("Produto:", "foto~~>" + p.getFoto());
+                Log.d("Produto:", "=================================");
+            }
+        }
     }
 }
