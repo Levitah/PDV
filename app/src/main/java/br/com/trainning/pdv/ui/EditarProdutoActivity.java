@@ -3,6 +3,7 @@ package br.com.trainning.pdv.ui;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -18,6 +19,11 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
+
+import com.mapzen.android.lost.api.LocationListener;
+import com.mapzen.android.lost.api.LocationRequest;
+import com.mapzen.android.lost.api.LocationServices;
+import com.mapzen.android.lost.api.LostApiClient;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,6 +61,9 @@ public class EditarProdutoActivity extends BaseActivity implements ImageInputHel
     private ImageInputHelper imageInputHelper;
     private Produto produto;
 
+    private double latitude = 0.0d;
+    private double longitude = 0.0d;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +73,34 @@ public class EditarProdutoActivity extends BaseActivity implements ImageInputHel
 
         imageInputHelper = new ImageInputHelper(this);
         imageInputHelper.setImageActionListener(this);
+
+        LostApiClient lostApiClient = new LostApiClient.Builder(this).build();
+        lostApiClient.connect();
+
+        Location location = LocationServices.FusedLocationApi.getLastLocation();
+        if (location != null) {
+            latitude = location.getLatitude();
+            longitude = location.getLongitude();
+        }
+
+        LocationRequest request = LocationRequest.create()
+                .setInterval(5000)
+                .setSmallestDisplacement(10)
+                .setPriority(LocationRequest.PRIORITY_LOW_POWER);
+
+        LocationListener listener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                // Do stuff
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+            }
+        };
+
+        Log.d("Location", "Latitude " + String.valueOf(latitude));
+        Log.d("Location", "Longitude " + String.valueOf(longitude));
+
+        LocationServices.FusedLocationApi.requestLocationUpdates(request, listener);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -75,6 +112,8 @@ public class EditarProdutoActivity extends BaseActivity implements ImageInputHel
                 if (!editTextPreco.getText().toString().trim().equals(""))
                     produto.setPreco(Double.parseDouble(editTextPreco.getText().toString().toString()));
                 produto.setFoto(Base64Util.encodeTobase64(((BitmapDrawable)imageViewFoto.getDrawable()).getBitmap()));
+                produto.setLatitude(latitude);
+                produto.setLongitude(longitude);
                 produto.save();
 
                 Snackbar.make(view, "Produto alterado com sucesso!", Snackbar.LENGTH_SHORT).show();
