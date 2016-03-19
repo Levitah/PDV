@@ -28,11 +28,15 @@ import br.com.trainning.pdv.domain.adapter.CustomArrayAdapter;
 import br.com.trainning.pdv.domain.model.Item;
 import br.com.trainning.pdv.domain.model.ItemProduto;
 import br.com.trainning.pdv.domain.model.Produto;
+import br.com.trainning.pdv.domain.network.APIClient;
 import br.com.trainning.pdv.domain.util.Util;
 import butterknife.Bind;
 import jim.h.common.android.lib.zxing.config.ZXingLibConfig;
 import jim.h.common.android.lib.zxing.integrator.IntentIntegrator;
 import jim.h.common.android.lib.zxing.integrator.IntentResult;
+import retrofit.Callback;
+import retrofit.RetrofitError;
+import retrofit.client.Response;
 import se.emilsjolander.sprinkles.CursorList;
 import se.emilsjolander.sprinkles.Query;
 
@@ -47,12 +51,16 @@ public class MainActivity extends BaseActivity {
     @Bind(R.id.listView)
     SwipeMenuListView listView;
 
+    private Callback<List<Produto>> callbackProdutos;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        configureProdutoCallback();
 
         zxingLibConfig = new ZXingLibConfig();
         zxingLibConfig.useFrontLight = true;
@@ -125,7 +133,6 @@ public class MainActivity extends BaseActivity {
             }
         });
 
-
         popularLista();
     }
 
@@ -160,6 +167,13 @@ public class MainActivity extends BaseActivity {
             startActivity(intent);
 
             Log.d("Main Activity", "Selecionou Editar Produto");
+            return true;
+        }
+
+        //Ação de sincronizar produtos
+        else if (id == R.id.action_sync) {
+
+            new APIClient().getRestService().getAllProdutos(callbackProdutos);
             return true;
         }
 
@@ -247,5 +261,26 @@ public class MainActivity extends BaseActivity {
         getSupportActionBar().setTitle("PDV " + Util.getFormatedCurrency(String.valueOf(valorTotal)));
         adapter = new CustomArrayAdapter(this, R.layout.list_item, list);
         listView.setAdapter(adapter);
+    }
+
+    private void configureProdutoCallback() {
+        callbackProdutos = new Callback<List<Produto>>() {
+            @Override public void success(List<Produto> resultado, Response response) {
+                List<Produto> lp = Query.all(Produto.class).get().asList();
+                //List<Produto> lp = cursorList.asList();
+                for(Produto p:lp){
+                    p.delete();
+                }
+
+                for(Produto produto:resultado){
+                    produto.setId(0L);
+                    produto.save();
+                }
+            }
+
+            @Override public void failure(RetrofitError error) {
+                Log.e("RETROFIT", "Error:"+error.getMessage());
+            }
+        };
     }
 }
