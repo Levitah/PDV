@@ -1,5 +1,6 @@
 package br.com.trainning.pdv.ui;
 
+import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.Intent;
 import android.graphics.Color;
@@ -15,22 +16,28 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.baoyz.swipemenulistview.SwipeMenu;
 import com.baoyz.swipemenulistview.SwipeMenuCreator;
 import com.baoyz.swipemenulistview.SwipeMenuItem;
 import com.baoyz.swipemenulistview.SwipeMenuListView;
+import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import br.com.trainning.pdv.R;
 import br.com.trainning.pdv.domain.adapter.CustomArrayAdapter;
+import br.com.trainning.pdv.domain.model.Carrinho;
+import br.com.trainning.pdv.domain.model.Compra;
 import br.com.trainning.pdv.domain.model.Item;
 import br.com.trainning.pdv.domain.model.ItemProduto;
 import br.com.trainning.pdv.domain.model.Produto;
 import br.com.trainning.pdv.domain.network.APIClient;
 import br.com.trainning.pdv.domain.util.Util;
 import butterknife.Bind;
+import dmax.dialog.SpotsDialog;
 import jim.h.common.android.lib.zxing.config.ZXingLibConfig;
 import jim.h.common.android.lib.zxing.integrator.IntentIntegrator;
 import jim.h.common.android.lib.zxing.integrator.IntentResult;
@@ -47,11 +54,16 @@ public class MainActivity extends BaseActivity {
     private double valorTotal;
     private int quantidadeItens;
     private CustomArrayAdapter adapter;
+    private String idCompra;
+    private Carrinho carrinho;
+    private Compra compra;
+    AlertDialog dialog;
 
     @Bind(R.id.listView)
     SwipeMenuListView listView;
 
     private Callback<List<Produto>> callbackProdutos;
+    private Callback<String> callbackCompra;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +73,17 @@ public class MainActivity extends BaseActivity {
         setSupportActionBar(toolbar);
 
         configureProdutoCallback();
+        configureCompraCallback();
+        dialog = new SpotsDialog(this, "Carregando...");
+
+        List<Item> itens = Query.all(Item.class).get().asList();
+        for (Item item:itens)
+            item.delete();
+        idCompra = Util.getUniquePsuedoID();
+        carrinho = new Carrinho();
+        carrinho.setIdCompra(idCompra);
+        carrinho.setEncerrada(0);
+        carrinho.setEnviada(0);
 
         zxingLibConfig = new ZXingLibConfig();
         zxingLibConfig.useFrontLight = true;
@@ -173,8 +196,47 @@ public class MainActivity extends BaseActivity {
         //Ação de sincronizar produtos
         else if (id == R.id.action_sync) {
 
+            dialog.show();
             new APIClient().getRestService().getAllProdutos(callbackProdutos);
             return true;
+        }
+
+        else if (id == R.id.action_buy) {
+            List<Item> itens = Query.all(Item.class).get().asList();
+            Produto produto;
+            int quantidadeItens = 0;
+            double precoTotal = 0.0d;
+            for (Item it:itens) {
+                quantidadeItens += it.getQuantidade();
+                produto = Query.one(Produto.class, "select * from produto where codigo_barra = ?", it.getIdProduto()).get();
+                precoTotal += it.getQuantidade() * produto.getPreco();
+            }
+
+            compra = new Compra();
+            compra.setCarrinho(carrinho);
+            compra.setItens(itens);
+
+            MaterialStyledDialog dialog = new MaterialStyledDialog(this)
+                    .setTitle("Fechar Compra!")
+                    .setDescription("Quantidade de volumes: " + quantidadeItens + " - Total: R$ " + precoTotal)
+                    .build()
+                    .setPositive("Sim", new MaterialDialog.SingleButtonCallback() {
+                        @Override
+                        public void onClick(MaterialDialog dialog, DialogAction which) {
+                            dialog.dismiss();
+                            MainActivity.this.dialog.show();
+                            new APIClient().getRestService().enviarCompra(compra, callbackCompra);
+                            Log.d("MaterialStyledDialogs", "Do something!");
+                        }
+                    })
+                    .setNegative("Não", new MaterialDialog.SingleButtonCallback() {
+                        @Override
+                        public void onClick(MaterialDialog dialog, DialogAction which) {
+                            dialog.dismiss();
+                            Log.d("MaterialStyledDialogs", "Do something!");
+                        }
+                    });
+            dialog.show();
         }
 
         return super.onOptionsItemSelected(item);
@@ -217,7 +279,7 @@ public class MainActivity extends BaseActivity {
                     if (produto != null) {
                         Item item = new Item();
                         item.setId(0L);
-                        item.setIdCompra(1L);
+                        item.setIdCompra(idCompra);
                         item.setIdProduto(produto.getCodigoBarras());
                         item.setQuantidade(1);
                         item.save();
@@ -233,7 +295,7 @@ public class MainActivity extends BaseActivity {
     }
 
     public void popularLista(){
-        CursorList<Item> cursor = Query.many(Item.class, "select * from item where id_compra = ? order by id", 1).get();
+        CursorList<Item> cursor = Query.many(Item.class, "select * from item where id_compra = ? order by id", idCompra).get();
         List<Item> listaItem =  cursor.asList();
         Log.d("TAMANHOLISTA",""+ listaItem.size());
 
@@ -247,7 +309,7 @@ public class MainActivity extends BaseActivity {
 
             produto = Query.one(Produto.class,"select * from produto where codigo_barra = ?", item.getIdProduto()).get();
             itemProduto = new ItemProduto();
-            itemProduto.setIdCompra(1);
+            itemProduto.setIdCompra(idCompra);
             itemProduto.setIdItem(item.getId());
             itemProduto.setFoto(produto.getFoto());
             itemProduto.setDescricao(produto.getDescricao());
@@ -276,10 +338,35 @@ public class MainActivity extends BaseActivity {
                     produto.setId(0L);
                     produto.save();
                 }
+
+                dialog.dismiss();
             }
 
             @Override public void failure(RetrofitError error) {
                 Log.e("RETROFIT", "Error:"+error.getMessage());
+                dialog.dismiss();
+            }
+        };
+    }
+
+    private void configureCompraCallback() {
+        callbackCompra = new Callback<String>() {
+            @Override public void success(String resultado, Response response) {
+                List<Item> itens = Query.all(Item.class).get().asList();
+                for (Item item:itens)
+                    item.delete();
+                carrinho = new Carrinho();
+                idCompra = Util.getUniquePsuedoID();
+                carrinho.setIdCompra(idCompra);
+                carrinho.setEnviada(0);
+                carrinho.setEncerrada(0);
+                popularLista();
+                dialog.dismiss();
+            }
+
+            @Override public void failure(RetrofitError error) {
+                Log.e("RETROFIT", "Error:"+error.getMessage());
+                dialog.dismiss();
             }
         };
     }

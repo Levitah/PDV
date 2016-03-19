@@ -4,7 +4,7 @@ package br.com.trainning.pdv.domain.model;
  * Created by android on 12/03/2016.
  */
 public class ItemProduto {
-    private long idCompra;
+    private String idCompra;
     private long idItem;
     private String foto;
     private String descricao;
@@ -12,13 +12,9 @@ public class ItemProduto {
     private int quantidade;
     private double preco;
 
-    public long getIdCompra() {
-        return idCompra;
-    }
+    public String getIdCompra() { return idCompra; }
 
-    public void setIdCompra(long idCompra) {
-        this.idCompra = idCompra;
-    }
+    public void setIdCompra(String idCompra) { this.idCompra = idCompra; }
 
     public long getIdItem() {
         return idItem;

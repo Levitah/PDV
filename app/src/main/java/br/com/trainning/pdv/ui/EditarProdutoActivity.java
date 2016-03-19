@@ -1,5 +1,6 @@
 package br.com.trainning.pdv.ui;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -32,10 +33,15 @@ import java.util.List;
 
 import br.com.trainning.pdv.R;
 import br.com.trainning.pdv.domain.model.Produto;
+import br.com.trainning.pdv.domain.network.APIClient;
 import br.com.trainning.pdv.domain.util.Base64Util;
 import br.com.trainning.pdv.domain.util.ImageInputHelper;
 import butterknife.Bind;
 import butterknife.OnClick;
+import dmax.dialog.SpotsDialog;
+import retrofit.Callback;
+import retrofit.RetrofitError;
+import retrofit.client.Response;
 import se.emilsjolander.sprinkles.Query;
 
 public class EditarProdutoActivity extends BaseActivity implements ImageInputHelper.ImageActionListener {
@@ -63,6 +69,9 @@ public class EditarProdutoActivity extends BaseActivity implements ImageInputHel
 
     private double latitude = 0.0d;
     private double longitude = 0.0d;
+
+    Callback<String> callbackProdutoAlterado;
+    AlertDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,6 +106,9 @@ public class EditarProdutoActivity extends BaseActivity implements ImageInputHel
             }
         };
 
+        dialog = new SpotsDialog(this, "Carregando...");
+        configureProdutoAlteradoCallback();
+
         Log.d("Location", "Latitude " + String.valueOf(latitude));
         Log.d("Location", "Longitude " + String.valueOf(longitude));
 
@@ -114,9 +126,13 @@ public class EditarProdutoActivity extends BaseActivity implements ImageInputHel
                 produto.setFoto(Base64Util.encodeTobase64(((BitmapDrawable)imageViewFoto.getDrawable()).getBitmap()));
                 produto.setLatitude(latitude);
                 produto.setLongitude(longitude);
+                produto.setStatus(0);
                 produto.save();
 
-                Snackbar.make(view, "Produto alterado com sucesso!", Snackbar.LENGTH_SHORT).show();
+                dialog.show();
+                new APIClient().getRestService().updateProduto(produto.getCodigoBarras(), produto.getDescricao(), produto.getUnidade(), produto.getPreco(), produto.getFoto(), produto.getStatus(), produto.getLatitude(), produto.getLongitude(), callbackProdutoAlterado);
+
+                //Snackbar.make(view, "Produto alterado com sucesso!", Snackbar.LENGTH_SHORT).show();
             }
         });
 
@@ -200,5 +216,20 @@ public class EditarProdutoActivity extends BaseActivity implements ImageInputHel
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void configureProdutoAlteradoCallback() {
+        callbackProdutoAlterado = new Callback<String>() {
+            @Override public void success(String resultado, Response response) {
+                dialog.dismiss();
+                Snackbar.make(findViewById(android.R.id.content), "Alteração efetuada com sucesso!.", Snackbar.LENGTH_LONG).show();
+            }
+
+            @Override public void failure(RetrofitError error) {
+                Log.e("RETROFIT", "Error:"+error.getMessage());
+                dialog.dismiss();
+                Snackbar.make(findViewById(android.R.id.content), "Houve uma falha na comunicação. Por favor, verifique a conexão e tente novamente.", Snackbar.LENGTH_LONG).show();
+            }
+        };
     }
 }
