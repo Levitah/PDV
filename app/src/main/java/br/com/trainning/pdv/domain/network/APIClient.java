@@ -8,6 +8,7 @@ import retrofit.Callback;
 import retrofit.RestAdapter;
 import retrofit.client.OkClient;
 import retrofit.http.Body;
+import retrofit.http.DELETE;
 import retrofit.http.Field;
 import retrofit.http.FormUrlEncoded;
 import retrofit.http.GET;
@@ -82,6 +83,12 @@ public class APIClient {
                 @Field("latitude") double latitude,
                 @Field("longitude") double longitude,
                 Callback<String> callbackUpdateProduto
+        );
+
+
+        @DELETE("/produto")
+        String deleteProduto(
+                @Query("id") String codigoBarras
         );
     }
 }

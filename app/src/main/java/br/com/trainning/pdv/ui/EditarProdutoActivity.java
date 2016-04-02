@@ -223,6 +223,7 @@ public class EditarProdutoActivity extends BaseActivity implements ImageInputHel
             @Override public void success(String resultado, Response response) {
                 dialog.dismiss();
                 Snackbar.make(findViewById(android.R.id.content), "Alteração efetuada com sucesso!.", Snackbar.LENGTH_LONG).show();
+                finish();
             }
 
             @Override public void failure(RetrofitError error) {
