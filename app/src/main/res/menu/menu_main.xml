@@ -13,6 +13,11 @@
         android:title="@string/action_edit"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_mapa"
+        android:orderInCategory="100"
+        android:title="@string/action_mapa"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_sync"
         android:orderInCategory="100"
         android:title="@string/action_sync"

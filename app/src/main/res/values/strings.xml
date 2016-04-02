@@ -7,4 +7,10 @@
     <string name="title_activity_editar_produto">EditarProdutoActivity</string>
     <string name="action_sync">Sincronizar Produto</string>
     <string name="action_buy">Fechar a compra</string>
+
+    <string name="title_activity_mapa">Mapa de Produtos</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="action_mapa">Mapa de Produtos</string>
+    <string name="accessToken">pk.eyJ1IjoiaGF2ZW5iYXlsZXkiLCJhIjoiY2ltajQ2Z3p3MDBqdXU3a3ExcG1iandieiJ9.VBYEZUeIHjx4oCfXeRe1fw</string>
 </resources>

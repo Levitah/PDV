@@ -193,6 +193,16 @@ public class MainActivity extends BaseActivity {
             return true;
         }
 
+        //Ação de mapa de produtos
+        else if (id == R.id.action_mapa) {
+
+            Intent intent = new Intent(MainActivity.this, MapaActivity.class);
+            startActivity(intent);
+
+            Log.d("Main Activity", "Selecionou Mapa Activity");
+            return true;
+        }
+
         //Ação de sincronizar produtos
         else if (id == R.id.action_sync) {
 
